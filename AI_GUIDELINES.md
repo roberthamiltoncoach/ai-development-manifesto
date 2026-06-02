@@ -28,5 +28,5 @@ This document serves as the overarching "brain" for AI agents and developers wor
 - **Feature Gating:** New, risky, or administrative UI features should be wrapped in Remote Configuration Feature Flags so they can be toggled remotely without requiring a new code deployment.
 
 ## 6. The "Zero to One" Initialization Rule
-- **Foundational Integrity First:** Before writing *any* feature code for a new repository, the AI must ensure that the foundational production values are active. This means setting up a basic CI/CD pipeline (e.g., GitHub Actions), enforcing a code formatter (Prettier), a linter (ESLint), and pre-commit hooks (Husky). 
+- **Foundational Integrity First:** Before writing *any* feature code for a new repository, the AI must ensure that the foundational production values are active. This means setting up a basic CI/CD pipeline (e.g., GitHub Actions), a Dependabot configuration (`.github/dependabot.yml`) to monitor package managers and GitHub Actions, enforcing a code formatter (Prettier), a linter (ESLint), and pre-commit hooks (Husky). 
 - **No Naked Codebases:** Do not allow new projects (like Vite or Firebase boilerplates) to exist without an automated E2E test folder (e.g., Cypress) and backend test folder being initialized.
