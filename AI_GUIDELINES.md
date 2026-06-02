@@ -33,3 +33,4 @@ This document serves as the overarching "brain" for AI agents and developers wor
 
 ## 7. Safe Deployments
 - **One-Click, One-Confirm Deployments:** All projects must contain interactive scripts (e.g., `scripts/deploy-staging.sh` and `scripts/deploy-prod.sh`) that encapsulate deployment logic. These scripts must prompt the user with a single `[Y/n]` confirmation before executing destructive or production-altering changes (like pushing to a main branch or creating a GitHub Release).
+- **Self-Healing AI Workflows:** Deployment scripts *must* include `gh run watch` logic to monitor the remote GitHub Actions pipeline. If a pipeline fails, the script must automatically run `gh run view <RUN_ID> --log-failed` to dump the error logs into the terminal. This allows an orchestrating AI (like Antigravity) to automatically capture the error, analyze the failure, and propose a code fix to the developer.
