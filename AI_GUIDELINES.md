@@ -6,6 +6,9 @@ This document serves as the overarching "brain" for AI agents and developers wor
 - **Lean Architecture:** Avoid unnecessary paid third-party services (e.g., Sentry, Percy) unless absolutely critical. Rely on native tools (GitHub Actions, Firebase native logging, etc.) where possible.
 - **Notification Hygiene:** Avoid notification fatigue. Default to daily scheduled digests rather than real-time transactional emails for non-urgent tasks.
 - **Fail-Safe by Default:** Implement strict guardrails around destructive actions. Destructive operations (like deleting users or resources) must be explicitly flagged and restricted. Automation should proactively prevent dangling references (e.g., un-allocating relationships when a parent record is deleted).
+- **Ghost Process Mitigation (Port Safety):** All local development workflows running background servers or database emulators must implement automated cleanup hooks (e.g., `scripts/clear-ports.cjs` run in `predev`) to terminate ghost processes and prevent port conflict errors (`EADDRINUSE`). Configure pre-dev hooks in package manager scripts (e.g., `"predev": "node scripts/clear-ports.cjs"`) and regularly audit processes via `lsof -i :<port>`.
+- **Production Config Seeding (Drift Prevention):** Seeding scripts and local clients should query production REST endpoints (such as public Firestore JSON REST APIs) to load dynamic trip settings and configuration values rather than relying on stale local hardcoded fallbacks. Seeding scripts (e.g., `node scripts/seed-emulator.cjs`) must be idempotent and clear the database before reconstructing mock data using dynamic, relative timestamps.
+
 
 ## 2. Dependency Management & Upgrades (The Blast Radius Rule)
 - **Blast Radius Analysis:** Before updating major dependencies, the AI must perform a "dry run" or impact analysis. 
@@ -17,6 +20,8 @@ This document serves as the overarching "brain" for AI agents and developers wor
 - **Backend Priority:** Prioritize automated testing for business-critical backend logic (payments, database syncs, background cron jobs, critical data mutations). This provides rock-solid guarantees that data is handled safely.
 - **Mobile First UI E2E:** E2E UI testing (via tools like Cypress or Playwright) must enforce mobile layout stability. Always include a suite that simulates mobile viewports (e.g., iPhone X) to ensure critical UI components don't overflow or become un-clickable.
 - **Pre-commit Integrity:** All code must pass linting and type-checking via a pre-commit hook (e.g., `husky` and `lint-staged`) before being committed.
+- **CI Memory-Optimized E2E (OOM Prevention):** To prevent CI runners from running out of memory (exit code 137), E2E test suites must build static assets first and run Cypress directly against the lightweight static Hosting emulator (e.g., `test:e2e:hosting`) instead of a dynamic dev server, eliminating the compiler overhead. In the CI environment, set `CYPRESS_NO_COMMAND_LOG=1` and `NODE_OPTIONS=--max-old-space-size=2048`. In `cypress.config.ts`, set `numTestsKeptInMemory: 0` and `video: false` to optimize memory utilization.
+
 
 ## 4. Mobile UI & Rendering (WebKit Safety)
 - **Native Scrolling:** Never apply custom `::-webkit-scrollbar` styling globally on mobile devices. Isolate it within `@media (hover: hover) and (pointer: fine)` to prevent touch-gesture lockups on iOS WebKit.
@@ -49,3 +54,22 @@ To maximize execution velocity and prevent prompt/confirmation friction during a
 - **Package Manager Operations:** `npm install *`, `npm audit *`, `npm update *` (Managing third-party libraries and running vulnerability audits).
 - **GitHub CLI Workflow Automation:** `gh run *`, `gh secret *`, `gh auth*`, `gh repo*` (Monitoring GitHub Actions pipelines and configuring remote repository secrets).
 - **Utility, Cleanup, and System Diagnostics:** `rm -rf *`, `rm *`, `python3 *`, `ps aux*`, `grep*` (Pruning obsolete deployment configurations/Netlify artifacts, executing diagnostic scripts, and inspecting system processes).
+
+## 9. Centralized Interface String Management (String Isolation Rule)
+- **Centralized Content Store:** All user-facing UI copy, labels, SEO titles, descriptions, aria-labels, form helper texts, and metadata must be stored in a centralized configuration file (`content.json`) rather than being hardcoded or distributed across HTML template files, client-side JavaScript, or backend functions.
+- **Compile-Time Schema Validation:** The centralized content file must be validated at compile-time against a strict JSON Schema (`content.schema.json`) to enforce type constraints, ensure structural completeness, and prevent build execution if any keys are missing or malformed.
+- **Recursive Template Compilation:** The build compiler (`build.js`) must recursively replace double-curly brace placeholders (e.g., `{{hero.title}}` or `{{analytics.sentryDsn}}`) within all HTML templates and JS scripts. This ensures a clean separation of interface concerns: templates manage structure and interactions, while `content.json` defines all textual configurations.
+- **Dynamic Content Safeguards:** Any CMS actions (such as adding or modifying content via the admin workstation dashboard) must update this single central file or its respective markdown directories, programmatically triggering a compiler rebuild to regenerate static HTML/JS pages.
+
+## 10. Context Preservation & Truncation Resilience (The Context Continuity Rule)
+- **High-Density Summary File:** To guard against context window truncation or overflow, the project root must maintain a high-density, chronological `PROJECT_CONTEXT.md` file.
+- **Automatic Context Maintenance:** AI agents are expected to keep `PROJECT_CONTEXT.md` updated as they make progress. It must track the project overview, active conversation IDs, boundaries (first/last requests in each thread), uncommitted changes (git status), pending backlog tasks, and recent git commits.
+- **Context Restoration Flow:** In the event of a context truncation or starting a new thread, the user or agent can point the new session at `PROJECT_CONTEXT.md` to immediately restore full developer alignment.
+- **Living Action Items:** Alongside `PROJECT_CONTEXT.md`, maintain local, granular checklists like `task.md` and design outlines like `implementation_plan.md` to track progress step-by-step and keep execution aligned across chat sessions.
+- **Write Down Decisions:** Document complex architecture decisions, technical design trade-offs, and "gotchas" in code comments or documentation rather than leaving them only in conversation chat logs.
+
+## 11. Git Hygiene & Branch Management (Drift Prevention)
+- **Incremental Commits:** Commit code frequently with clear, conventional messages. Do not leave a large chunk of work unstaged or uncommitted at the end of a session.
+- **Clean Working Directory:** Ensure that temporary files, logs, environment variables, or local configs are strictly ignored in `.gitignore` to prevent polluting the git tree.
+
+
